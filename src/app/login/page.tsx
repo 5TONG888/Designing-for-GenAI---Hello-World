@@ -6,10 +6,14 @@ export default function LoginPage() {
     const supabase = createClient()
 
     const handleGoogleLogin = async () => {
+        const siteUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+            : 'http://localhost:3000'
+
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: 'http://localhost:3000/auth/callback',
+                redirectTo: `${siteUrl}/auth/callback`,
             },
         })
     }
