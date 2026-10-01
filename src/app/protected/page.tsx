@@ -32,26 +32,26 @@ export default async function ProtectedPage() {
                 </div>
 
                 <div className="mt-4">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-800">Assignment #2 Todo List</h2>
+                    <h2 className="text-xl font-semibold mb-4 text-gray-800">Assignment #2 Todos (from Supabase)</h2>
 
                     {error ? (
-                        <p className="text-red-500 font-medium">Failed to load todos: {error.message}</p>
+                        <p className="text-red-500 font-medium">Error loading data: {error.message}</p>
                     ) : todos && todos.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full border-collapse border border-gray-200 text-sm">
-                                <thead>
-                                <tr className="bg-gray-100 text-gray-700">
-                                    <th className="border border-gray-200 px-4 py-2 text-left">ID</th>
-                                    <th className="border border-gray-200 px-4 py-2 text-left">Title</th>
-                                    <th className="border border-gray-200 px-4 py-2 text-left">Created At</th>
+                        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+                            <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Title</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Created At</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="bg-white divide-y divide-gray-200">
                                 {todos.map((todo: { id: number; title: string; created_at: string }) => (
-                                    <tr key={todo.id} className="hover:bg-gray-50 text-gray-800">
-                                        <td className="border border-gray-200 px-4 py-2 font-medium">{todo.id}</td>
-                                        <td className="border border-gray-200 px-4 py-2">{todo.title}</td>
-                                        <td className="border border-gray-200 px-4 py-2">
+                                    <tr key={todo.id} className="hover:bg-gray-50 transition">
+                                        <td className="px-6 py-4 font-medium text-gray-900">{todo.id}</td>
+                                        <td className="px-6 py-4 text-gray-800">{todo.title}</td>
+                                        <td className="px-6 py-4 text-gray-500">
                                             {new Date(todo.created_at).toLocaleString()}
                                         </td>
                                     </tr>
@@ -60,7 +60,7 @@ export default async function ProtectedPage() {
                             </table>
                         </div>
                     ) : (
-                        <p className="text-gray-500">No todos found.</p>
+                        <p className="text-gray-500">No data found in Supabase todos table.</p>
                     )}
                 </div>
 

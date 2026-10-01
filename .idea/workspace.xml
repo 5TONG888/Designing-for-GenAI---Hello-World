@@ -80,8 +80,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/app/protected/page.tsx">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1035">
-              <caret line="69" column="1" selection-start-line="69" selection-start-column="1" selection-end-line="69" selection-end-column="1" />
+            <state relative-caret-position="165">
+              <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
               <folding>
                 <element signature="e#0#56#0" expanded="true" />
               </folding>
@@ -123,7 +123,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -154,12 +153,20 @@
               <item name="Designing-for-GenAI_Hello-World" type="b2602c69:ProjectViewProjectNode" />
               <item name="Designing-for-GenAI_Hello-World" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="protected" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Designing-for-GenAI_Hello-World" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Designing-for-GenAI_Hello-World" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="lib" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -199,18 +206,17 @@
       <workItem from="1789574759144" duration="3237000" />
       <workItem from="1790219163925" duration="960000" />
       <workItem from="1790827864247" duration="4710000" />
-      <workItem from="1790890518203" duration="203000" />
+      <workItem from="1790890518203" duration="454000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="9864000" />
+    <option name="totallyTimeSpent" value="10318000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="215" y="45" width="929" height="686" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21871477" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.21871477" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -227,9 +233,9 @@
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
-      <window_info anchor="bottom" id="Terminal" order="10" weight="0.18367347" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="10" visible="true" weight="0.18367347" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
-      <window_info anchor="bottom" id="TypeScript" order="12" visible="true" weight="0.05102041" />
+      <window_info anchor="bottom" id="TypeScript" order="12" weight="0.05102041" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -316,8 +322,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/app/protected/page.tsx">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1035">
-          <caret line="69" column="1" selection-start-line="69" selection-start-column="1" selection-end-line="69" selection-end-column="1" />
+        <state relative-caret-position="165">
+          <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
           <folding>
             <element signature="e#0#56#0" expanded="true" />
           </folding>
