@@ -8,7 +8,7 @@ export default function LoginPage() {
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: 'https://designing-for-gen-ai-hello-world.vercel.app/auth/callback',
+                redirectTo: `${window.location.origin}/auth/callback`,
             },
         })
     }
