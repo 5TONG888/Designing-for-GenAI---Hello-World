@@ -31,11 +31,14 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
 
-        const res = await fetch(endpoint, {
+        const res: any = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
+            },
             body: JSON.stringify({
                 contents: [
                     {
@@ -49,8 +52,24 @@ export async function POST(request: NextRequest) {
             })
         })
 
-        const result: any = await (res as any).json()
-        const content = result?.candidates?.[0]?.content?.parts?.[0]?.text || 'Failed to generate content.'
+        const result: any = await res.json()
+
+        if (!res.ok || result.error) {
+            const errorMsg = result?.error?.message || `Gemini API call failed with status ${res.status}`
+            console.error('Gemini API Error:', result)
+            return (Response as any).json(
+                { error: errorMsg },
+                { status: 500 }
+            )
+        }
+
+        const content = result?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (!content) {
+            return (Response as any).json(
+                { error: 'No content candidate returned from Gemini.' },
+                { status: 500 }
+            )
+        }
 
         const { data, error } = await supabase
             .from('generations')
@@ -64,8 +83,9 @@ export async function POST(request: NextRequest) {
             .single()
 
         if (error) {
+            console.error('Supabase insert error:', error)
             return (Response as any).json(
-                { error: error.message },
+                { error: `Database Save Error: ${error.message}` },
                 { status: 500 }
             )
         }
