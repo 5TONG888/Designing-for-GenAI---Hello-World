@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
 
         const res: any = await fetch(endpoint, {
             method: 'POST',
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             })
         })
 
-        const result: any = await res.json()
+        const result: any = await (res as any).json()
 
         if (!res.ok || result.error) {
             const errorMsg = result?.error?.message || `Gemini API call failed with status ${res.status}`
