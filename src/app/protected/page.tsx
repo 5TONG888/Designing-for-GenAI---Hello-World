@@ -1,70 +1,144 @@
-import { createClient } from '../../lib/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
+'use client'
 
-export default async function ProtectedPage() {
-    const supabase = await createClient()
+import { useEffect, useState } from 'react'
+import { createClient } from '../../lib/supabase/client'
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        redirect('/login')
+interface Generation {
+    id: string
+    prompt: string
+    content: string
+    upvotes: number
+    downvotes: number
+    created_at: string
+}
+
+export default function ProtectedPage() {
+    const [generations, setGenerations] = useState<Generation[]>([])
+    const [prompt, setPrompt] = useState<string>('')
+    const [loading, setLoading] = useState<boolean>(false)
+    const [user, setUser] = useState<any>(null)
+    const [errorMsg, setErrorMsg] = useState<string>('')
+
+    const supabase: any = createClient()
+
+    const fetchGenerations = async () => {
+        const { data } = await supabase
+            .from('generations')
+            .select('*')
+            .order('created_at', { ascending: false })
+        if (data) setGenerations(data as Generation[])
     }
 
-    const { data: todos, error } = await supabase
-        .from('todos')
-        .select('*')
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }: any) => setUser(data?.user || null))
+        fetchGenerations()
+    }, [])
+
+    const handleGenerate = async (e: any) => {
+        e.preventDefault()
+        if (!prompt.trim()) return
+        setLoading(true)
+        setErrorMsg('')
+
+        const res: any = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt }),
+        })
+
+        if (res.ok) {
+            setPrompt('')
+            await fetchGenerations()
+        } else {
+            const err: any = await res.json()
+            setErrorMsg(err?.error || 'Generation failed')
+        }
+        setLoading(false)
+    }
+
+    const handleVote = async (generation_id: string, vote: number) => {
+        setErrorMsg('')
+        if (!user) {
+            setErrorMsg('You must be logged in to vote!')
+            return
+        }
+
+        const res: any = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ generation_id, vote }),
+        })
+
+        if (res.ok) {
+            await fetchGenerations()
+        } else {
+            const err: any = await res.json()
+            setErrorMsg(err?.error || 'Vote failed')
+        }
+    }
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-8 bg-gray-50">
-            <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-lg p-6 shadow-md">
+        <div className="max-w-2xl mx-auto p-6 space-y-8">
+            <header className="text-center space-y-2">
+                <h1 className="text-3xl font-bold text-gray-900">Roast My NYC Dorm & Survival Tips</h1>
+                <p className="text-gray-600">Tailored AI generation feed for Sam at Columbia</p>
+            </header>
 
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                    <div>
-                        <h1 className="text-2xl font-bold text-green-600">Gated / Protected UI</h1>
-                        <p className="text-sm text-gray-500">User ID: {user.id}</p>
-                    </div>
-                    <Link
-                        href="/profile"
-                        className="px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800 transition text-sm font-medium"
+            {errorMsg ? (
+                <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded text-sm text-center">
+                    {errorMsg}
+                </div>
+            ) : null}
+
+            {user ? (
+                <form onSubmit={handleGenerate} className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder="e.g. Carman vs John Jay, Subway line 1 tips..."
+                        value={prompt}
+                        onChange={(e: any) => setPrompt(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                    />
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
                     >
-                        Back to Profile
-                    </Link>
+                        {loading ? 'Generating...' : 'Generate'}
+                    </button>
+                </form>
+            ) : (
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-md text-center">
+                    Notice: Only logged-in users can generate AI tips and rate them.
                 </div>
+            )}
 
-                <div className="mt-4">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-800">Assignment #2 Todos (from Supabase)</h2>
-
-                    {error ? (
-                        <p className="text-red-500 font-medium">Error loading data: {error.message}</p>
-                    ) : todos && todos.length > 0 ? (
-                        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-                            <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">ID</th>
-                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Title</th>
-                                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Created At</th>
-                                </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                {todos.map((todo: { id: number; title: string; created_at: string }) => (
-                                    <tr key={todo.id} className="hover:bg-gray-50 transition">
-                                        <td className="px-6 py-4 font-medium text-gray-900">{todo.id}</td>
-                                        <td className="px-6 py-4 text-gray-800">{todo.title}</td>
-                                        <td className="px-6 py-4 text-gray-500">
-                                            {new Date(todo.created_at).toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800">Community Rated Feed</h2>
+                {generations.map((gen: Generation) => (
+                    <div key={gen.id} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm space-y-3">
+                        <div className="flex justify-between items-center text-xs text-gray-500">
+                            <span className="font-semibold text-gray-700">Prompt: {gen.prompt}</span>
+                            <span>{new Date(gen.created_at).toLocaleDateString()}</span>
                         </div>
-                    ) : (
-                        <p className="text-gray-500">No data found in Supabase todos table.</p>
-                    )}
-                </div>
-
+                        <p className="text-gray-900 text-sm leading-relaxed">{gen.content}</p>
+                        <div className="flex items-center gap-4 text-xs pt-2 border-t border-gray-100">
+                            <button
+                                onClick={() => handleVote(gen.id, 1)}
+                                className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-green-600 rounded border border-gray-200 transition"
+                            >
+                                👍 Upvote ({gen.upvotes || 0})
+                            </button>
+                            <button
+                                onClick={() => handleVote(gen.id, -1)}
+                                className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded border border-gray-200 transition"
+                            >
+                                👎 Downvote ({gen.downvotes || 0})
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
-        </main>
+        </div>
     )
 }
