@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface PresetTopic {
     label: string
@@ -46,9 +46,10 @@ export default function ProtectedPage() {
         }
     }
 
-    useEffect(() => {
-        fetchFeed()
-    }, [])
+    // 初始加载
+    import('react').then(({ useEffect }) => {
+        // 使用动态引入或直接写在标准的 useEffect 里
+    })
 
     // 处理 Roast 生成
     const handleGenerate = async () => {
@@ -144,15 +145,41 @@ export default function ProtectedPage() {
                             placeholder="Enter a topic, dorm name, or Columbia vibe..."
                             className="flex-1 px-5 py-4 text-base border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800 bg-slate-50/30"
                             onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                            disabled={loading}
                         />
                         <button
                             onClick={handleGenerate}
                             disabled={loading || !prompt.trim()}
-                            className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-base font-bold rounded-2xl transition-all shadow-sm hover:shadow disabled:opacity-50"
+                            className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-base font-bold rounded-2xl transition-all shadow-sm hover:shadow disabled:opacity-50 min-w-[180px] flex items-center justify-center"
                         >
-                            {loading ? 'Generating...' : 'Generate Roast 🔥'}
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Thinking...</span>
+                </span>
+                            ) : (
+                                'Generate Roast 🔥'
+                            )}
                         </button>
                     </div>
+
+                    {/* 动画提示框 */}
+                    {loading && (
+                        <div className="mt-4 p-4 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 animate-pulse">
+                            <span className="text-xl">🦁</span>
+                            <div className="flex-1">
+                                <p className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-0.5">
+                                    AI Thought Process:
+                                </p>
+                                <p className="text-sm font-semibold text-blue-900">
+                                    ☕ Consulting Lit Hum ghosts & crafting the ultimate Columbia roast...
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* 预设 Topics */}
                     <div className="mt-6">
@@ -164,7 +191,8 @@ export default function ProtectedPage() {
                                 <button
                                     key={i}
                                     onClick={() => setPrompt(topic.prompt)}
-                                    className="px-4 py-2 bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 text-sm font-medium rounded-xl transition"
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 text-sm font-medium rounded-xl transition disabled:opacity-50"
                                 >
                                     {topic.label}
                                 </button>
@@ -218,8 +246,7 @@ export default function ProtectedPage() {
                                 >
                                     <div>
                                         <div className="flex justify-between items-center mb-4">
-                                            {/* 幽默化标签：把 Prompt: 替换为 🦁 Columbia Vibe: 或 🎯 Target: */}
-                                            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50/90 text-blue-800 text-xs sm:text-sm font-bold rounded-xl border border-blue-100">
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50/90 text-blue-800 text-xs sm:text-sm font-bold rounded-xl border border-blue-100">
                         <span>🦁</span>
                         <span className="text-blue-500 font-medium">Roasting:</span>
                         <span>{item.prompt}</span>
