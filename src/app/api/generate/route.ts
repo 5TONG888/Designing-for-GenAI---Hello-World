@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+        // 更新为最新模型 gemini-3.8-flash
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
 
         const payload = {
             contents: [
