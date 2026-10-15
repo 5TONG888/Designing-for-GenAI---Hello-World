@@ -14,6 +14,7 @@ interface FeedItem {
     created_at: string
     upvotes?: number
     downvotes?: number
+    user_vote?: 'up' | 'down' | null
 }
 
 export default function ProtectedPage() {
@@ -79,26 +80,19 @@ export default function ProtectedPage() {
 
     // 处理点赞 / 点踩
     const handleVote = async (id: string, type: 'up' | 'down') => {
-        // 前端乐观更新（Optimistic Update）提升响应流畅度
-        setFeed((prev) =>
-            prev.map((item) => {
-                if (item.id === id) {
-                    return {
-                        ...item,
-                        upvotes: type === 'up' ? (item.upvotes || 0) + 1 : item.upvotes,
-                        downvotes: type === 'down' ? (item.downvotes || 0) + 1 : item.downvotes
-                    }
-                }
-                return item
-            })
-        )
-
         try {
-            await fetch('/api/vote', {
+            const res: any = await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, type })
             })
+
+            if (res.ok) {
+                const updatedItem = await res.json()
+                setFeed((prev) =>
+                    prev.map((item) => (item.id === id ? { ...item, ...updatedItem } : item))
+                )
+            }
         } catch (e: any) {
             console.error('Failed to vote:', e)
         }
@@ -115,7 +109,7 @@ export default function ProtectedPage() {
     })
 
     return (
-        <main className="min-h-screen bg-slate-50 text-slate-900 px-4 py-12 max-w-4xl mx-auto">
+        <main className="min-h-screen bg-slate-50 text-slate-900 px-4 sm:px-8 py-12 max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center mb-10">
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-3">
@@ -140,7 +134,7 @@ export default function ProtectedPage() {
             )}
 
             {/* 生成输入框区域 */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 mb-10">
                 <div className="flex flex-col sm:flex-row gap-3">
                     <input
                         type="text"
@@ -186,7 +180,7 @@ export default function ProtectedPage() {
                 <div className="flex bg-slate-200 p-1 rounded-xl text-sm font-medium">
                     <button
                         onClick={() => setSortBy('latest')}
-                        className={`px-3 py-1.5 rounded-lg transition ${
+                        className={`px-3.5 py-1.5 rounded-lg transition ${
                             sortBy === 'latest' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
                             }`}
                     >
@@ -194,7 +188,7 @@ export default function ProtectedPage() {
                     </button>
                     <button
                         onClick={() => setSortBy('top')}
-                        className={`px-3 py-1.5 rounded-lg transition ${
+                        className={`px-3.5 py-1.5 rounded-lg transition ${
                             sortBy === 'top' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
                             }`}
                     >
@@ -204,50 +198,68 @@ export default function ProtectedPage() {
             </div>
 
             {/* Feed List */}
-            <div className="space-y-4">
-                {sortedFeed.map((item) => {
-                    const score = (item.upvotes || 0) - (item.downvotes || 0)
-                    return (
-                        <div
-                            key={item.id}
-                            className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"
-                        >
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                  <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">
-                    Prompt: {item.prompt}
-                  </span>
-                                    <span className="text-xs text-slate-400">
-                    {new Date(item.created_at).toLocaleDateString()}
+            {sortedFeed.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-500">
+                    <p className="text-lg font-medium mb-1">No roasts in the feed yet 🦁</p>
+                    <p className="text-sm">Click a topic above or enter your own to generate the very first one!</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {sortedFeed.map((item) => {
+                        const score = (item.upvotes || 0) - (item.downvotes || 0)
+                        const isUpvoted = item.user_vote === 'up'
+                        const isDownvoted = item.user_vote === 'down'
+
+                        return (
+                            <div
+                                key={item.id}
+                                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                    <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">
+                      Prompt: {item.prompt}
+                    </span>
+                                        <span className="text-xs text-slate-400">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                                    </div>
+                                    <p className="text-slate-800 text-base leading-relaxed mb-4">
+                                        {item.content}
+                                    </p>
+                                </div>
+
+                                {/* Vote Buttons */}
+                                <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                                    <button
+                                        onClick={() => handleVote(item.id, 'up')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                            isUpvoted
+                                                ? 'bg-blue-100 border border-blue-300 text-blue-700 font-bold'
+                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+                                            }`}
+                                    >
+                                        👍 <span>{item.upvotes || 0}</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleVote(item.id, 'down')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                            isDownvoted
+                                                ? 'bg-red-100 border border-red-300 text-red-700 font-bold'
+                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+                                            }`}
+                                    >
+                                        👎 <span>{item.downvotes || 0}</span>
+                                    </button>
+                                    <span className={`text-xs font-semibold ml-2 ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                    Score: {score > 0 ? `+${score}` : score}
                   </span>
                                 </div>
-                                <p className="text-slate-800 text-base leading-relaxed mb-4">
-                                    {item.content}
-                                </p>
                             </div>
-
-                            {/* Vote Buttons */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                                <button
-                                    onClick={() => handleVote(item.id, 'up')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-medium transition"
-                                >
-                                    👍 <span>{item.upvotes || 0}</span>
-                                </button>
-                                <button
-                                    onClick={() => handleVote(item.id, 'down')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-medium transition"
-                                >
-                                    👎 <span>{item.downvotes || 0}</span>
-                                </button>
-                                <span className={`text-xs font-semibold ml-2 ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                  Score: {score > 0 ? `+${score}` : score}
-                </span>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
+                        )
+                    })}
+                </div>
+            )}
         </main>
     )
 }
