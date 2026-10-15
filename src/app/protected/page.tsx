@@ -1,76 +1,59 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '../../lib/supabase/client'
+import { useState, useEffect } from 'react'
 
-// 哥大 & NYC 预设热门话题标签
-const PRESET_TOPICS = [
-    '🏛️ Butler Library 24/7',
-    '🏢 Carman vs River Hall',
-    '🍕 Ferris vs John Jay Dining',
-    '🚇 1 Train Weekend Delays',
-    '☕ Morningside Heights Coffee',
-    '🎓 Lit Hum Final Exam'
-]
+interface PresetTopic {
+    label: string
+    prompt: string
+}
+
+interface FeedItem {
+    id: string
+    prompt: string
+    content: string
+    created_at: string
+    upvotes?: number
+    downvotes?: number
+}
 
 export default function ProtectedPage() {
-    const [user, setUser] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [generations, setGenerations] = useState<any[]>([])
-    const [prompt, setPrompt] = useState('')
-    const [generating, setGenerating] = useState(false)
-    const [errorMsg, setErrorMsg] = useState('')
+    const [prompt, setPrompt] = useState<string>('')
+    const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string | null>(null)
+    const [feed, setFeed] = useState<FeedItem[]>([])
+    const [sortBy, setSortBy] = useState<'latest' | 'top'>('latest')
 
-    const supabase = createClient()
+    const presetTopics: PresetTopic[] = [
+        { label: '🏛️ Butler Library 24/7', prompt: 'Butler Library 24/7' },
+        { label: '🏢 Carman vs River Hall', prompt: 'Carman vs River Hall' },
+        { label: '🍕 Ferris vs John Jay Dining', prompt: 'Ferris vs John Jay Dining' },
+        { label: '🚇 1 Train Weekend Delays', prompt: '1 Train Weekend Delays' },
+        { label: '☕ Morningside Heights Coffee', prompt: 'Morningside Heights Coffee' },
+        { label: '🎓 Lit Hum Final Exam', prompt: 'Lit Hum Final Exam' }
+    ]
 
-    useEffect(() => {
-        async function initData() {
-            // 1. 获取用户信息
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
-
-            // 2. 拉取所有生成列表
-            await fetchGenerations()
-            setLoading(false)
-        }
-        initData()
-    }, [])
-
-    const fetchGenerations = async () => {
-        const { data, error } = await supabase
-            .from('generations')
-            .select(`
-        *,
-        generation_votes (
-          vote,
-          user_id
-        )
-      `)
-            .order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Error fetching generations:', error)
-            return
-        }
-
-        if (data) {
-            // 统计 Upvote 和 Downvote 数量
-            const formatted = data.map((gen: any) => {
-                const votes = gen.generation_votes || []
-                const upvotes = votes.filter((v: any) => v.vote === 1).length
-                const downvotes = votes.filter((v: any) => v.vote === -1).length
-                return { ...gen, upvotes, downvotes }
-            })
-            setGenerations(formatted)
+    // 拉取 Feed 数据
+    const fetchFeed = async () => {
+        try {
+            const res: any = await fetch('/api/feed')
+            if (res.ok) {
+                const data = await res.json()
+                setFeed(data || [])
+            }
+        } catch (e: any) {
+            console.error('Failed to fetch feed:', e)
         }
     }
 
-    const handleGenerate = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!prompt.trim()) return
+    useEffect(() => {
+        fetchFeed()
+    }, [])
 
-        setGenerating(true)
-        setErrorMsg('')
+    // 处理 Roast 生成
+    const handleGenerate = async () => {
+        if (!prompt.trim() || loading) return
+        setLoading(true)
+        setError(null)
 
         try {
             const res: any = await fetch('/api/generate', {
@@ -79,199 +62,192 @@ export default function ProtectedPage() {
                 body: JSON.stringify({ prompt })
             })
 
-            const result = await res.json()
+            const data = await res.json()
 
-            if (!res.ok || result.error) {
-                setErrorMsg(result.error || 'Failed to generate content')
-            } else {
-                setPrompt('')
-                await fetchGenerations()
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to generate roast')
             }
+
+            setPrompt('')
+            await fetchFeed()
         } catch (err: any) {
-            setErrorMsg(err.message || 'An unexpected error occurred')
+            setError(err.message || 'Something went wrong')
         } finally {
-            setGenerating(false)
+            setLoading(false)
         }
     }
 
-    const handleVote = async (generationId: string, voteValue: number) => {
-        if (!user) {
-            setErrorMsg('Please log in to vote')
-            return
-        }
+    // 处理点赞 / 点踩
+    const handleVote = async (id: string, type: 'up' | 'down') => {
+        // 前端乐观更新（Optimistic Update）提升响应流畅度
+        setFeed((prev) =>
+            prev.map((item) => {
+                if (item.id === id) {
+                    return {
+                        ...item,
+                        upvotes: type === 'up' ? (item.upvotes || 0) + 1 : item.upvotes,
+                        downvotes: type === 'down' ? (item.downvotes || 0) + 1 : item.downvotes
+                    }
+                }
+                return item
+            })
+        )
 
         try {
-            const res: any = await fetch('/api/vote', {
+            await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ generation_id: generationId, vote: voteValue })
+                body: JSON.stringify({ id, type })
             })
-
-            const result = await res.json()
-
-            if (!res.ok || result.error) {
-                setErrorMsg(result.error || 'Failed to submit vote')
-            } else {
-                await fetchGenerations()
-            }
-        } catch (err: any) {
-            setErrorMsg(err.message || 'An unexpected error occurred')
+        } catch (e: any) {
+            console.error('Failed to vote:', e)
         }
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="text-slate-600 font-semibold text-base animate-pulse">
-                    Loading Roast Arena...
-                </div>
-            </div>
-        )
-    }
+    // 排序逻辑
+    const sortedFeed = [...feed].sort((a, b) => {
+        if (sortBy === 'top') {
+            const scoreA = (a.upvotes || 0) - (a.downvotes || 0)
+            const scoreB = (b.upvotes || 0) - (b.downvotes || 0)
+            return scoreB - scoreA
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-            <div className="max-w-4xl mx-auto px-4 pt-10">
-                {/* Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight mb-3">
-                        Roast My NYC Dorm & Survival Tips
-                    </h1>
-                    <p className="text-slate-600 font-medium text-base sm:text-lg">
-                        Tailored AI generation feed for Columbia University & NYC
-                    </p>
+        <main className="min-h-screen bg-slate-50 text-slate-900 px-4 py-12 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-10">
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-3">
+                    Roast My NYC Dorm & Survival Tips
+                </h1>
+                <p className="text-lg text-slate-600">
+                    Tailored AI generation feed for Columbia University & NYC
+                </p>
+            </div>
+
+            {/* 报错卡片 */}
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center justify-between">
+                    <span>⚠️ {error}</span>
+                    <button
+                        onClick={() => setError(null)}
+                        className="text-red-500 hover:text-red-800 font-bold ml-4"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
+            {/* 生成输入框区域 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                        type="text"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Enter a topic, dorm name, or Columbia vibe..."
+                        className="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800"
+                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                    />
+                    <button
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt.trim()}
+                        className="px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-xl transition disabled:opacity-50"
+                    >
+                        {loading ? 'Generating...' : 'Generate Roast 🔥'}
+                    </button>
                 </div>
 
-                {/* 错误信息展示 */}
-                {errorMsg && (
-                    <div className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm">
-                        <span>⚠️ {errorMsg}</span>
-                        <button
-                            onClick={() => setErrorMsg('')}
-                            className="text-rose-500 hover:text-rose-800 font-bold ml-4"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
-
-                {/* 未登录 Prompt 提示卡片 */}
-                {!user && (
-                    <div className="mb-8 p-6 bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h3 className="text-lg font-bold">Want to Roast a Dorm or Vote?</h3>
-                            <p className="text-blue-100 text-sm mt-1">
-                                Sign in to submit new AI prompts and rate community roasts.
-                            </p>
-                        </div>
-                        <a
-                            href="/login"
-                            className="px-6 py-2.5 bg-white text-blue-900 font-bold rounded-xl text-sm shadow hover:bg-blue-50 transition whitespace-nowrap"
-                        >
-                            Sign In Now
-                        </a>
-                    </div>
-                )}
-
-                {/* AI 生成输入框 + Preset Topic Pills（仅登录显示） */}
-                {user && (
-                    <div className="mb-12">
-                        <form onSubmit={handleGenerate} className="mb-3">
-                            <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-                                <input
-                                    type="text"
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="e.g. Carman vs River Hall, 1 Train on weekends, Ferris Dining..."
-                                    disabled={generating}
-                                    className="flex-1 px-4 py-3 bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 font-medium text-sm sm:text-base"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={generating || !prompt.trim()}
-                                    className="px-8 py-3.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition disabled:opacity-50 text-sm sm:text-base shadow"
-                                >
-                                    {generating ? 'Generating...' : 'Generate Roast 🔥'}
-                                </button>
-                            </div>
-                        </form>
-
-                        {/* 预设热门话题标签 */}
-                        <div className="flex flex-wrap items-center gap-2 px-1">
-                            <span className="text-xs font-semibold text-slate-500 mr-1">Trending Topics:</span>
-                            {PRESET_TOPICS.map((topic, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setPrompt(topic)}
-                                    disabled={generating}
-                                    className="px-3 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-900 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-medium transition shadow-xs disabled:opacity-50"
-                                >
-                                    {topic}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Feed 展示区 */}
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <span>🔥</span> Community Rated Feed
-                    </h2>
-
-                    {generations.length === 0 ? (
-                        <div className="p-10 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 font-medium">
-                            No generations found yet. Be the first to roast!
-                        </div>
-                    ) : (
-                        generations.map((gen) => (
-                            <div
-                                key={gen.id}
-                                className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                {/* 预设 Topics */}
+                <div className="mt-6">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                        Trending Topics:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {presetTopics.map((topic, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setPrompt(topic.prompt)}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm rounded-lg transition"
                             >
-                                <div>
-                                    <div className="flex items-center justify-between gap-4 mb-3">
-                    <span className="text-xs font-bold text-blue-900 bg-blue-50 px-3 py-1 rounded-md border border-blue-100">
-                      Prompt: {gen.prompt}
-                    </span>
-                                        <span className="text-xs text-slate-400 font-medium">
-                      {new Date(gen.created_at).toLocaleDateString()}
-                    </span>
-                                    </div>
-                                    <p className="text-slate-800 font-medium text-base leading-relaxed mb-6">
-                                        {gen.content}
-                                    </p>
-                                </div>
-
-                                {/* 投票区 */}
-                                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                                    <button
-                                        onClick={() => handleVote(gen.id, 1)}
-                                        disabled={!user}
-                                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold rounded-xl text-xs transition disabled:opacity-50"
-                                    >
-                                        <span>👍 Upvote</span>
-                                        <span className="bg-emerald-200/60 px-1.5 py-0.5 rounded text-[11px]">
-                      ({gen.upvotes || 0})
-                    </span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => handleVote(gen.id, -1)}
-                                        disabled={!user}
-                                        className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 font-semibold rounded-xl text-xs transition disabled:opacity-50"
-                                    >
-                                        <span>👎 Downvote</span>
-                                        <span className="bg-rose-200/60 px-1.5 py-0.5 rounded text-[11px]">
-                      ({gen.downvotes || 0})
-                    </span>
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
+                                {topic.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
-        </div>
+
+            {/* Feed Filter & Header */}
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    🔥 Community Rated Feed
+                </h2>
+                <div className="flex bg-slate-200 p-1 rounded-xl text-sm font-medium">
+                    <button
+                        onClick={() => setSortBy('latest')}
+                        className={`px-3 py-1.5 rounded-lg transition ${
+                            sortBy === 'latest' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
+                            }`}
+                    >
+                        🕒 Latest
+                    </button>
+                    <button
+                        onClick={() => setSortBy('top')}
+                        className={`px-3 py-1.5 rounded-lg transition ${
+                            sortBy === 'top' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
+                            }`}
+                    >
+                        🔥 Top Rated
+                    </button>
+                </div>
+            </div>
+
+            {/* Feed List */}
+            <div className="space-y-4">
+                {sortedFeed.map((item) => {
+                    const score = (item.upvotes || 0) - (item.downvotes || 0)
+                    return (
+                        <div
+                            key={item.id}
+                            className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"
+                        >
+                            <div>
+                                <div className="flex justify-between items-center mb-3">
+                  <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">
+                    Prompt: {item.prompt}
+                  </span>
+                                    <span className="text-xs text-slate-400">
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </span>
+                                </div>
+                                <p className="text-slate-800 text-base leading-relaxed mb-4">
+                                    {item.content}
+                                </p>
+                            </div>
+
+                            {/* Vote Buttons */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                <button
+                                    onClick={() => handleVote(item.id, 'up')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-medium transition"
+                                >
+                                    👍 <span>{item.upvotes || 0}</span>
+                                </button>
+                                <button
+                                    onClick={() => handleVote(item.id, 'down')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-medium transition"
+                                >
+                                    👎 <span>{item.downvotes || 0}</span>
+                                </button>
+                                <span className={`text-xs font-semibold ml-2 ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                  Score: {score > 0 ? `+${score}` : score}
+                </span>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </main>
     )
 }
