@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 采用通用永续别名 Endpoint：gemini-flash-latest，自动兼容最新 API 版本的可用模型
+        // 使用官方通用动态别名，自动映射当前账号可用的最新 Flash 模型
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
 
         const payload = {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
             ]
         }
 
-        // 3. 发起 Gemini API 请求
+        // 3. 直接发起原生 HTTP POST 请求（零复杂封装，极速响应）
         const res: any = await fetch(endpoint, {
             method: 'POST',
             headers: {
