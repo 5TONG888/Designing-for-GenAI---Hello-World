@@ -218,8 +218,11 @@ export default function ProtectedPage() {
                                 >
                                     <div>
                                         <div className="flex justify-between items-center mb-4">
-                      <span className="inline-block px-3.5 py-1.5 bg-blue-50/80 text-blue-700 text-xs sm:text-sm font-bold rounded-full">
-                        Prompt: {item.prompt}
+                                            {/* 幽默化标签：把 Prompt: 替换为 🦁 Columbia Vibe: 或 🎯 Target: */}
+                                            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50/90 text-blue-800 text-xs sm:text-sm font-bold rounded-xl border border-blue-100">
+                        <span>🦁</span>
+                        <span className="text-blue-500 font-medium">Roasting:</span>
+                        <span>{item.prompt}</span>
                       </span>
                                             <span className="text-xs sm:text-sm text-slate-400 font-medium">
                         {new Date(item.created_at).toLocaleDateString()}
