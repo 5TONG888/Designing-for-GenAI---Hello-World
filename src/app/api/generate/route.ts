@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 采用稳定标准的 Gemini API Endpoint
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
+        // 尝试首先调用 gemini-2.5-flash；若失败则降级调用 gemini-2.0-flash
+        let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
 
         const payload = {
             contents: [
@@ -77,7 +77,15 @@ export async function POST(request: NextRequest) {
             ]
         }
 
-        const { ok, result, status } = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
+        let response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
+
+        if (!response.ok) {
+            // 备用兼容 Endpoint
+            endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+            response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
+        }
+
+        const { ok, result, status } = response
 
         if (!ok || !result || result.error) {
             const errorMsg = result?.error?.message || `Gemini API call failed with status ${status}`
