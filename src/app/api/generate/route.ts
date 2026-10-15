@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 尝试首先调用 gemini-2.5-flash；若失败则降级调用 gemini-2.0-flash
-        let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+        // 采用 Google 官方最新推荐的 Flash 模型 gemini-3.8-flash
+        let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
 
         const payload = {
             contents: [
@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
 
         let response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
 
+        // 若主模型响应异常，安全降级至稳定模型 gemini-2.5-flash
         if (!response.ok) {
-            // 备用兼容 Endpoint
-            endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+            endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
             response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
         }
 
