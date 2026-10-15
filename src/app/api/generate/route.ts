@@ -3,38 +3,10 @@ import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// 封装带重试的 Gemini 请求函数
-async function fetchGeminiWithRetry(endpoint: string, apiKey: string, payload: any, maxRetries = 1) {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const res: any = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey
-            },
-            body: JSON.stringify(payload)
-        })
-
-        const result: any = await res.json()
-
-        if (res.ok && !result.error) {
-            return { ok: true, result }
-        }
-
-        const isHighDemand = result?.error?.message?.includes('high demand') || res.status === 503 || res.status === 429
-
-        if (attempt < maxRetries && isHighDemand) {
-            continue
-        }
-
-        return { ok: false, result, status: res.status }
-    }
-    return { ok: false, result: null, status: 500 }
-}
-
 export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
+    // 1. 验证用户登录状态
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
         return (Response as any).json(
@@ -43,6 +15,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
+    // 2. 校验 Prompt 参数
     const body = await (request as any).json()
     const prompt = body?.prompt
 
@@ -62,8 +35,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 采用 Google 官方最新推荐的 Flash 模型 gemini-3.8-flash
-        let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
+        // 采用通用永续别名 Endpoint：gemini-flash-latest，自动兼容最新 API 版本的可用模型
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
 
         const payload = {
             contents: [
@@ -77,18 +50,20 @@ export async function POST(request: NextRequest) {
             ]
         }
 
-        let response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
+        // 3. 发起 Gemini API 请求
+        const res: any = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify(payload)
+        })
 
-        // 若主模型响应异常，安全降级至稳定模型 gemini-2.5-flash
-        if (!response.ok) {
-            endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
-            response = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
-        }
+        const result: any = await res.json()
 
-        const { ok, result, status } = response
-
-        if (!ok || !result || result.error) {
-            const errorMsg = result?.error?.message || `Gemini API call failed with status ${status}`
+        if (!res.ok || result.error) {
+            const errorMsg = result?.error?.message || `Gemini API call failed with status ${res.status}`
             console.error('Gemini API Error:', result)
             return (Response as any).json(
                 { error: errorMsg },
@@ -104,6 +79,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // 4. 将生成结果写入 Supabase 数据库
         const { data, error } = await supabase
             .from('generations')
             .insert({
