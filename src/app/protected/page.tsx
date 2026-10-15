@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '../../lib/supabase/client'
 
+// 哥大 & NYC 预设热门话题标签
+const PRESET_TOPICS = [
+    '🏛️ Butler Library 24/7',
+    '🏢 Carman vs River Hall',
+    '🍕 Ferris vs John Jay Dining',
+    '🚇 1 Train Weekend Delays',
+    '☕ Morningside Heights Coffee',
+    '🎓 Lit Hum Final Exam'
+]
+
 export default function ProtectedPage() {
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -163,27 +173,44 @@ export default function ProtectedPage() {
                     </div>
                 )}
 
-                {/* AI 生成输入框（仅登录显示） */}
+                {/* AI 生成输入框 + Preset Topic Pills（仅登录显示） */}
                 {user && (
-                    <form onSubmit={handleGenerate} className="mb-12">
-                        <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-                            <input
-                                type="text"
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="e.g. Carman vs River Hall, 1 Train on weekends, Ferris Dining..."
-                                disabled={generating}
-                                className="flex-1 px-4 py-3 bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 font-medium text-sm sm:text-base"
-                            />
-                            <button
-                                type="submit"
-                                disabled={generating || !prompt.trim()}
-                                className="px-8 py-3.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition disabled:opacity-50 text-sm sm:text-base shadow"
-                            >
-                                {generating ? 'Generating...' : 'Generate Roast 🔥'}
-                            </button>
+                    <div className="mb-12">
+                        <form onSubmit={handleGenerate} className="mb-3">
+                            <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                                <input
+                                    type="text"
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    placeholder="e.g. Carman vs River Hall, 1 Train on weekends, Ferris Dining..."
+                                    disabled={generating}
+                                    className="flex-1 px-4 py-3 bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 font-medium text-sm sm:text-base"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={generating || !prompt.trim()}
+                                    className="px-8 py-3.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition disabled:opacity-50 text-sm sm:text-base shadow"
+                                >
+                                    {generating ? 'Generating...' : 'Generate Roast 🔥'}
+                                </button>
+                            </div>
+                        </form>
+
+                        {/* 预设热门话题标签 */}
+                        <div className="flex flex-wrap items-center gap-2 px-1">
+                            <span className="text-xs font-semibold text-slate-500 mr-1">Trending Topics:</span>
+                            {PRESET_TOPICS.map((topic, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setPrompt(topic)}
+                                    disabled={generating}
+                                    className="px-3 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-900 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-medium transition shadow-xs disabled:opacity-50"
+                                >
+                                    {topic}
+                                </button>
+                            ))}
                         </div>
-                    </form>
+                    </div>
                 )}
 
                 {/* Feed 展示区 */}
