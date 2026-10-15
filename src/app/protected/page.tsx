@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface PresetTopic {
     label: string
@@ -46,10 +46,10 @@ export default function ProtectedPage() {
         }
     }
 
-    // 初始加载
-    import('react').then(({ useEffect }) => {
-        // 使用动态引入或直接写在标准的 useEffect 里
-    })
+    // 页面加载时自动获取社区 Feed
+    useEffect(() => {
+        fetchFeed()
+    }, [])
 
     // 处理 Roast 生成
     const handleGenerate = async () => {
