@@ -1,16 +1,10 @@
 import { createClient } from '../../../lib/supabase/server'
 import { NextRequest } from 'next/server'
 
-// 纯逻辑延迟函数（不依赖任何 Node/Browser 定时器变量，彻底消除 IDE 检查红线）
-async function sleep(ms: number) {
-    const start = Date.now()
-    while (Date.now() - start < ms) {
-        await new Promise((resolve) => resolve(null))
-    }
-}
+export const dynamic = 'force-dynamic'
 
-// 封装带自动重试的 Gemini 请求函数
-async function fetchGeminiWithRetry(endpoint: string, apiKey: string, payload: any, maxRetries = 2) {
+// 封装带重试的 Gemini 请求函数
+async function fetchGeminiWithRetry(endpoint: string, apiKey: string, payload: any, maxRetries = 1) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const res: any = await fetch(endpoint, {
             method: 'POST',
@@ -30,7 +24,6 @@ async function fetchGeminiWithRetry(endpoint: string, apiKey: string, payload: a
         const isHighDemand = result?.error?.message?.includes('high demand') || res.status === 503 || res.status === 429
 
         if (attempt < maxRetries && isHighDemand) {
-            await sleep(1000)
             continue
         }
 
@@ -69,8 +62,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 更新为最新模型 gemini-3.8-flash
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`
+        // 采用稳定标准的 Gemini API Endpoint
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
 
         const payload = {
             contents: [
@@ -84,7 +77,7 @@ export async function POST(request: NextRequest) {
             ]
         }
 
-        const { ok, result, status } = await fetchGeminiWithRetry(endpoint, apiKey, payload, 2)
+        const { ok, result, status } = await fetchGeminiWithRetry(endpoint, apiKey, payload, 1)
 
         if (!ok || !result || result.error) {
             const errorMsg = result?.error?.message || `Gemini API call failed with status ${status}`
