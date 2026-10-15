@@ -109,157 +109,159 @@ export default function ProtectedPage() {
     })
 
     return (
-        <main className="min-h-screen bg-slate-50 text-slate-900 px-4 sm:px-8 py-12 max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="text-center mb-10">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-3">
-                    Roast My NYC Dorm & Survival Tips
-                </h1>
-                <p className="text-lg text-slate-600">
-                    Tailored AI generation feed for Columbia University & NYC
-                </p>
-            </div>
-
-            {/* 报错卡片 */}
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center justify-between">
-                    <span>⚠️ {error}</span>
-                    <button
-                        onClick={() => setError(null)}
-                        className="text-red-500 hover:text-red-800 font-bold ml-4"
-                    >
-                        ✕
-                    </button>
-                </div>
-            )}
-
-            {/* 生成输入框区域 */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 mb-10">
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                        type="text"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Enter a topic, dorm name, or Columbia vibe..."
-                        className="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800"
-                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                    />
-                    <button
-                        onClick={handleGenerate}
-                        disabled={loading || !prompt.trim()}
-                        className="px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-xl transition disabled:opacity-50"
-                    >
-                        {loading ? 'Generating...' : 'Generate Roast 🔥'}
-                    </button>
-                </div>
-
-                {/* 预设 Topics */}
-                <div className="mt-6">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                        Trending Topics:
+        <div className="w-full min-h-screen bg-slate-50/50">
+            <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+                {/* Header */}
+                <div className="text-center mb-10 sm:mb-12">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-4">
+                        Roast My NYC Dorm & Survival Tips
+                    </h1>
+                    <p className="text-lg sm:text-xl text-slate-600 font-medium">
+                        Tailored AI generation feed for Columbia University & NYC
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                        {presetTopics.map((topic, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setPrompt(topic.prompt)}
-                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm rounded-lg transition"
-                            >
-                                {topic.label}
-                            </button>
-                        ))}
+                </div>
+
+                {/* 报错卡片 */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl flex items-center justify-between shadow-sm">
+                        <span>⚠️ {error}</span>
+                        <button
+                            onClick={() => setError(null)}
+                            className="text-red-500 hover:text-red-800 font-bold ml-4"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+
+                {/* 生成输入框区域 */}
+                <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 mb-10">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="text"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Enter a topic, dorm name, or Columbia vibe..."
+                            className="flex-1 px-5 py-4 text-base border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800 bg-slate-50/30"
+                            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                        />
+                        <button
+                            onClick={handleGenerate}
+                            disabled={loading || !prompt.trim()}
+                            className="px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white text-base font-bold rounded-2xl transition-all shadow-sm hover:shadow disabled:opacity-50"
+                        >
+                            {loading ? 'Generating...' : 'Generate Roast 🔥'}
+                        </button>
+                    </div>
+
+                    {/* 预设 Topics */}
+                    <div className="mt-6">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                            Trending Topics:
+                        </p>
+                        <div className="flex flex-wrap gap-2.5">
+                            {presetTopics.map((topic, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setPrompt(topic.prompt)}
+                                    className="px-4 py-2 bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 text-sm font-medium rounded-xl transition"
+                                >
+                                    {topic.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Feed Filter & Header */}
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                    🔥 Community Rated Feed
-                </h2>
-                <div className="flex bg-slate-200 p-1 rounded-xl text-sm font-medium">
-                    <button
-                        onClick={() => setSortBy('latest')}
-                        className={`px-3.5 py-1.5 rounded-lg transition ${
-                            sortBy === 'latest' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
-                            }`}
-                    >
-                        🕒 Latest
-                    </button>
-                    <button
-                        onClick={() => setSortBy('top')}
-                        className={`px-3.5 py-1.5 rounded-lg transition ${
-                            sortBy === 'top' ? 'bg-white shadow text-slate-900' : 'text-slate-600'
-                            }`}
-                    >
-                        🔥 Top Rated
-                    </button>
+                {/* Feed Filter & Header */}
+                <div className="flex items-center justify-between mb-6 px-1">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-800 flex items-center gap-2 tracking-tight">
+                        🔥 Community Rated Feed
+                    </h2>
+                    <div className="flex bg-slate-200/80 p-1.5 rounded-2xl text-sm font-semibold">
+                        <button
+                            onClick={() => setSortBy('latest')}
+                            className={`px-4 py-2 rounded-xl transition-all ${
+                                sortBy === 'latest' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                        >
+                            🕒 Latest
+                        </button>
+                        <button
+                            onClick={() => setSortBy('top')}
+                            className={`px-4 py-2 rounded-xl transition-all ${
+                                sortBy === 'top' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                        >
+                            🔥 Top Rated
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Feed List */}
-            {sortedFeed.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-500">
-                    <p className="text-lg font-medium mb-1">No roasts in the feed yet 🦁</p>
-                    <p className="text-sm">Click a topic above or enter your own to generate the very first one!</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {sortedFeed.map((item) => {
-                        const score = (item.upvotes || 0) - (item.downvotes || 0)
-                        const isUpvoted = item.user_vote === 'up'
-                        const isDownvoted = item.user_vote === 'down'
+                {/* Feed List */}
+                {sortedFeed.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 text-slate-500 shadow-sm">
+                        <p className="text-xl font-bold mb-2">No roasts in the feed yet 🦁</p>
+                        <p className="text-slate-500 text-base">Click a topic above or enter your own to generate the very first one!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-5">
+                        {sortedFeed.map((item) => {
+                            const score = (item.upvotes || 0) - (item.downvotes || 0)
+                            const isUpvoted = item.user_vote === 'up'
+                            const isDownvoted = item.user_vote === 'down'
 
-                        return (
-                            <div
-                                key={item.id}
-                                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between"
-                            >
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                    <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">
-                      Prompt: {item.prompt}
-                    </span>
-                                        <span className="text-xs text-slate-400">
-                      {new Date(item.created_at).toLocaleDateString()}
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col justify-between transition hover:shadow-md"
+                                >
+                                    <div>
+                                        <div className="flex justify-between items-center mb-4">
+                      <span className="inline-block px-3.5 py-1.5 bg-blue-50/80 text-blue-700 text-xs sm:text-sm font-bold rounded-full">
+                        Prompt: {item.prompt}
+                      </span>
+                                            <span className="text-xs sm:text-sm text-slate-400 font-medium">
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </span>
+                                        </div>
+                                        <p className="text-slate-800 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+                                            {item.content}
+                                        </p>
+                                    </div>
+
+                                    {/* Vote Buttons */}
+                                    <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                                        <button
+                                            onClick={() => handleVote(item.id, 'up')}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                                isUpvoted
+                                                    ? 'bg-blue-100 border border-blue-300 text-blue-700 shadow-sm font-bold'
+                                                    : 'bg-slate-100/70 hover:bg-slate-200/70 text-slate-700'
+                                                }`}
+                                        >
+                                            👍 <span>{item.upvotes || 0}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleVote(item.id, 'down')}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                                isDownvoted
+                                                    ? 'bg-red-100 border border-red-300 text-red-700 shadow-sm font-bold'
+                                                    : 'bg-slate-100/70 hover:bg-slate-200/70 text-slate-700'
+                                                }`}
+                                        >
+                                            👎 <span>{item.downvotes || 0}</span>
+                                        </button>
+                                        <span className={`text-sm font-bold ml-2 ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                      Score: {score > 0 ? `+${score}` : score}
                     </span>
                                     </div>
-                                    <p className="text-slate-800 text-base leading-relaxed mb-4">
-                                        {item.content}
-                                    </p>
                                 </div>
-
-                                {/* Vote Buttons */}
-                                <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                                    <button
-                                        onClick={() => handleVote(item.id, 'up')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                                            isUpvoted
-                                                ? 'bg-blue-100 border border-blue-300 text-blue-700 font-bold'
-                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-                                            }`}
-                                    >
-                                        👍 <span>{item.upvotes || 0}</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleVote(item.id, 'down')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                                            isDownvoted
-                                                ? 'bg-red-100 border border-red-300 text-red-700 font-bold'
-                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-                                            }`}
-                                    >
-                                        👎 <span>{item.downvotes || 0}</span>
-                                    </button>
-                                    <span className={`text-xs font-semibold ml-2 ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                    Score: {score > 0 ? `+${score}` : score}
-                  </span>
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-        </main>
+                            )
+                        })}
+                    </div>
+                )}
+            </main>
+        </div>
     )
 }
