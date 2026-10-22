@@ -47,7 +47,7 @@ export default function AdminPage() {
         checkUser()
     }, [])
 
-    // 获取看板统计数据
+    // 获取看板统计数据（修复 ratingsData 可能为 null 的 TS 报错）
     const fetchDashboardStats = async () => {
         setStatsLoading(true)
         try {
@@ -63,10 +63,12 @@ export default function AdminPage() {
                 .from('ratings')
                 .select('rating')
 
-            const totalRatings = ratingsData?.length || 0
+            // 安全处理：确保 ratingsData 不为 null
+            const safeRatings = ratingsData || []
+            const totalRatings = safeRatings.length
             let avgRating = '0.0'
             if (totalRatings > 0) {
-                const sum = ratingsData.reduce((acc, curr) => acc + (curr.rating || 0), 0)
+                const sum = safeRatings.reduce((acc, curr) => acc + (curr.rating || 0), 0)
                 avgRating = (sum / totalRatings).toFixed(1)
             }
 
@@ -83,7 +85,7 @@ export default function AdminPage() {
         }
     }
 
-    // 谷歌登录方法（直接使用线上绝对路径，完美避开所有环境对象检查）
+    // 谷歌登录方法
     const handleGoogleLogin = async () => {
         await supabase.auth.signInWithOAuth({
             provider: 'google',
