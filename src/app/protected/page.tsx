@@ -17,6 +17,22 @@ interface FeedItem {
     user_vote?: 'up' | 'down' | null
 }
 
+// 丰富的大题库，包含更多哥大与 NYC 专属校园梗
+const ALL_TOPICS: PresetTopic[] = [
+    { label: '🏛️ Butler Library 24/7', prompt: 'Butler Library 24/7' },
+    { label: '🏢 Carman vs River Hall', prompt: 'Carman vs River Hall' },
+    { label: '🍕 Ferris vs John Jay Dining', prompt: 'Ferris vs John Jay Dining' },
+    { label: '🚇 1 Train Weekend Delays', prompt: '1 Train Weekend Delays' },
+    { label: '☕ Morningside Heights Coffee', prompt: 'Morningside Heights Coffee' },
+    { label: '🎓 Lit Hum Final Exam', prompt: 'Lit Hum Final Exam' },
+    { label: '🐀 NYC Subway Rats Lore', prompt: 'NYC Subway Rats Lore' },
+    { label: '🛍️ Trader Joe’s 72nd St Line', prompt: 'Trader Joes 72nd St Line' },
+    { label: '📚 CC Office Hours Queue', prompt: 'CC Office Hours Queue' },
+    { label: '☕ Hungarian Pastry Shop', prompt: 'Hungarian Pastry Shop' },
+    { label: '🌃 Riverside Park Night Walk', prompt: 'Riverside Park Night Walk' },
+    { label: '🌉 Washington Heights Vibe', prompt: 'Washington Heights Vibe' }
+]
+
 export default function ProtectedPage() {
     const [prompt, setPrompt] = useState<string>('')
     const [loading, setLoading] = useState<boolean>(false)
@@ -24,14 +40,19 @@ export default function ProtectedPage() {
     const [feed, setFeed] = useState<FeedItem[]>([])
     const [sortBy, setSortBy] = useState<'latest' | 'top'>('latest')
 
-    const presetTopics: PresetTopic[] = [
-        { label: '🏛️ Butler Library 24/7', prompt: 'Butler Library 24/7' },
-        { label: '🏢 Carman vs River Hall', prompt: 'Carman vs River Hall' },
-        { label: '🍕 Ferris vs John Jay Dining', prompt: 'Ferris vs John Jay Dining' },
-        { label: '🚇 1 Train Weekend Delays', prompt: '1 Train Weekend Delays' },
-        { label: '☕ Morningside Heights Coffee', prompt: 'Morningside Heights Coffee' },
-        { label: '🎓 Lit Hum Final Exam', prompt: 'Lit Hum Final Exam' }
-    ]
+    // 动态热门话题状态
+    const [activeTopics, setActiveTopics] = useState<PresetTopic[]>([])
+
+    // 随机挑选 6 个话题的洗牌函数
+    const shuffleTopics = () => {
+        const shuffled = [...ALL_TOPICS].sort(() => 0.5 - Math.random())
+        setActiveTopics(shuffled.slice(0, 6))
+    }
+
+    // 页面首次加载时自动随机切换一组话题
+    useEffect(() => {
+        shuffleTopics()
+    }, [])
 
     // 拉取 Feed 数据
     const fetchFeed = async () => {
@@ -166,7 +187,7 @@ export default function ProtectedPage() {
                         </button>
                     </div>
 
-                    {/* 动画提示框 */}
+                    {/* 思考提示框 */}
                     {loading && (
                         <div className="mt-4 p-4 bg-blue-50/80 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 rounded-2xl flex items-center gap-3 text-blue-900 dark:text-blue-200 animate-pulse">
                             <span className="text-xl">🦁</span>
@@ -181,13 +202,23 @@ export default function ProtectedPage() {
                         </div>
                     )}
 
-                    {/* 预设 Topics */}
+                    {/* 动态 Trending Topics 区域 */}
                     <div className="mt-6">
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-                            Trending Topics:
-                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                Trending Topics:
+                            </p>
+                            <button
+                                onClick={shuffleTopics}
+                                disabled={loading}
+                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition"
+                            >
+                                <span>🔄</span> Shuffle Topics
+                            </button>
+                        </div>
+
                         <div className="flex flex-wrap gap-2.5">
-                            {presetTopics.map((topic, i) => (
+                            {activeTopics.map((topic, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setPrompt(topic.prompt)}
