@@ -4,7 +4,7 @@ import { createClient } from '../../../lib/supabase/server'
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams as unknown as { get: (key: string) => string | null }
     const code = searchParams.get('code')
-    const next = searchParams.get('next') || '/profile'
+    const next = searchParams.get('next') || '/protected'
     const origin = request.nextUrl.origin
 
     if (code) {
