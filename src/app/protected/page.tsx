@@ -17,7 +17,6 @@ interface FeedItem {
     user_vote?: 'up' | 'down' | null
 }
 
-// 丰富的大题库，包含更多哥大与 NYC 专属校园梗
 const ALL_TOPICS: PresetTopic[] = [
     { label: '🏛️ Butler Library 24/7', prompt: 'Butler Library 24/7' },
     { label: '🏢 Carman vs River Hall', prompt: 'Carman vs River Hall' },
@@ -43,13 +42,15 @@ export default function ProtectedPage() {
     // 动态热门话题状态
     const [activeTopics, setActiveTopics] = useState<PresetTopic[]>([])
 
-    // 随机挑选 6 个话题的洗牌函数
+    // 受控加载数量限制，默认先展示 6 条，解决无限滚动体验问题
+    const [visibleCount, setVisibleCount] = useState<number>(6)
+
+    // 随机洗牌话题
     const shuffleTopics = () => {
         const shuffled = [...ALL_TOPICS].sort(() => 0.5 - Math.random())
         setActiveTopics(shuffled.slice(0, 6))
     }
 
-    // 页面首次加载时自动随机切换一组话题
     useEffect(() => {
         shuffleTopics()
     }, [])
@@ -67,7 +68,6 @@ export default function ProtectedPage() {
         }
     }
 
-    // 页面加载时自动获取社区 Feed
     useEffect(() => {
         fetchFeed()
     }, [])
@@ -129,6 +129,9 @@ export default function ProtectedPage() {
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
+
+    // 截取当前显示的 Feed 切片
+    const visibleFeed = sortedFeed.slice(0, visibleCount)
 
     return (
         <div className="w-full min-h-screen bg-slate-50/50 dark:bg-slate-950 transition-colors">
@@ -269,7 +272,7 @@ export default function ProtectedPage() {
                     </div>
                 ) : (
                     <div className="space-y-5">
-                        {sortedFeed.map((item) => {
+                        {visibleFeed.map((item) => {
                             const score = (item.upvotes || 0) - (item.downvotes || 0)
                             const isUpvoted = item.user_vote === 'up'
                             const isDownvoted = item.user_vote === 'down'
@@ -324,6 +327,22 @@ export default function ProtectedPage() {
                                 </div>
                             )
                         })}
+
+                        {/* 受控加载更多 / 触底提示按钮 */}
+                        <div className="pt-6 text-center">
+                            {visibleCount < sortedFeed.length ? (
+                                <button
+                                    onClick={() => setVisibleCount((prev) => prev + 6)}
+                                    className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-sm rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition"
+                                >
+                                    Load More Community Roasts 📜
+                                </button>
+                            ) : (
+                                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                                    — You&apos;ve caught up with all Columbia roasts 🎉 —
+                                </p>
+                            )}
+                        </div>
                     </div>
                 )}
             </main>
